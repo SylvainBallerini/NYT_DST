@@ -27,6 +27,9 @@ type_book = [
 
 #nyt = Api_nyt()
 
+def total(nbs):
+    return sum(nbs)
+
 def select_sql(config, query):
     param = config
     # Établir une connexion
@@ -61,7 +64,7 @@ def insert_sql_book(config, book):
     #print(query)
     #cursor.execute(query)
 
-    query = "INSERT INTO data_book_2 (title, author, book_uri, publisher, description, price, contributor, book_image, book_image_width, book_image_height, amazon_product_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    query = "INSERT INTO data_book (title, author, book_uri, publisher, description, price, contributor, book_image, book_image_width, book_image_height, amazon_product_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     cursor.execute(query,[
         book['title'],
         book['author'],
@@ -86,20 +89,9 @@ def insert_sql_rank(config, book, id_book, type_book, date):
     connection = mysql.connector.connect(**config)
     cursor = connection.cursor()
 
-    print("Vals for rank")
-    print(type(book['rank']))
-    print(type(book['rank_last_week']))
-    print(type(book['weeks_on_list']))
-
-    print(type(type_book))
-    print(type(id_book))
-    print(type(date))
-
     id_book = int(id_book)   
 
-    print(type(id_book)) 
-
-    query = "INSERT INTO data_rank_2 (type_book, id_book, date, book_rank, rank_last_week, weeks_on_list) VALUES (%s, %s, %s, %s, %s, %s)"
+    query = "INSERT INTO data_rank (type_book, id_book, date, book_rank, rank_last_week, weeks_on_list) VALUES (%s, %s, %s, %s, %s, %s)"
     cursor.execute(query,[
             type_book,
             id_book,
@@ -113,7 +105,7 @@ def insert_sql_rank(config, book, id_book, type_book, date):
     connection.close()
     print("INSERT RANK DONE")
 
-df_max = select_sql(config, "SELECT MAX(date) FROM data_rank")
+#df_max = select_sql(config, "SELECT MAX(date) FROM data_rank")
 
 #print(df_max)
 #print(df_max['MAX(date)'].iloc[0])    
@@ -145,7 +137,7 @@ books = nyt.best_sellers_list(
 def get_best_seller(monday, type_b):
     nyt = Api_nyt()
     books = nyt.best_sellers_list(
-                name = type_book[0],
+                name = type_b,
                 #date = datetime.strptime(allM[0],'%Y-%m-%d')
                 #date = datetime.strptime('2023-11-06', '%Y-%m-%d')
                 date = datetime.strptime(monday, '%Y-%m-%d')                
@@ -160,32 +152,21 @@ def get_best_seller(monday, type_b):
 url = "http://www.amazon.com/Safe-Haven-Nicholas-Sparks/dp/044654759X?tag=NYTBSREV-20"
 
 def book_in_data(url):
-    #query = "select amazon_product_url from data_book where amazon_product_url like '%044654759X%'"
-    #query = 'select amazon_product_url from data_book where amazon_product_url like "%044654759X%"'
-    #book_1 = "'%http://www.amazon.com/Safe-Haven-Nicholas-Sparks/dp/044654759X?tag=NYTBSREV-20%'"
-    #url = "http://www.amazon.com/Safe-Haven-Nicholas-Sparks/dp/044654759X?tag=NYTBSREV-20"
+    
     book = "'%" + url + "%'"
-    #print(book_1)
-    #print(book_2)
     escape = "ESCAPE '*'"
-    query = "select id_book, amazon_product_url from data_book_2 where amazon_product_url like {} {}".format(book, escape) 
-    #print(query)
+    query = "select id_book, amazon_product_url from data_book where amazon_product_url like {} {}".format(book, escape) 
+    
     return select_sql(config, query)
 
-
-#print(book_in_data(url))
-
-#insert_sql("test",config)
-
-#Récupération de l'ID du livre dans la BDD
 def recovery_id_book(book):
 
     url = book['amazon_product_url']
-    print(f"url book {url}")
+    #print(f"url book {url}")
         
     id_book = 0
     df = book_in_data(url)
-    #print(df)
+    
     if df.empty:
         print("not in data book")
         #Création du livre dans data_book
@@ -196,23 +177,10 @@ def recovery_id_book(book):
 
     return id_book
 
-# Test récupération de l'ID du livre
-
-#print(recovery_id_book(url))
-
-#url = "http://www.amazon.com/dp/1984818589?tag=NYTBSREV-20"
-#print(recovery_id_book(url))
-
 def get_mondays():
-    # Obtention de la date d'aujourd'hui
-    #start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-    #print(start_date)
-    #start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    #today = datetime.strptime(today, "%Y-%m-%d")
+    
     start_date = last_maj()
     today = datetime.now().date()
-
-    #print(f"Date d'aujourd'hui {today}")
     
     # Liste pour stocker les dates des lundis
     mondays = []
@@ -226,35 +194,36 @@ def get_mondays():
         
         # Passage à la date suivante
         current_date += timedelta(days=1)
-    
-    #print(mondays[1:])
+
+    #LOG
+    print(f"LOG Liste des lundi {mondays[1:]}")
     return mondays[1:]
 
-print(f"{get_mondays()}")
-
-for monday in get_mondays():
-    print(monday)
-    print(get_best_seller(monday, type_book[0])[0])
-    book = get_best_seller(monday, type_book[0])[0]
-    print(book)
-    id_book = recovery_id_book(book)
-    print(f"id_book {id_book}")
-    insert_sql_rank(config, book, id_book, type_book[0], monday)
-
+def maj_data():
+    print(f"LOG Début MAJ")
     
-    
-    
+    for monday in get_mondays():    
 
+        print(f"LOG Début maj {monday}")
 
+        # boucle sur les différents types de livre
+        for t in type_book:
+            print(f"LOG Début maj type = {t}")
+            #print(get_best_seller(monday, type_book[0])[0])
+            books = get_best_seller(monday, t)
+            print(f"LOG nombre de livre {len(books)}")
 
+            # Boucle sur chaque livre 
+            for nb, book in enumerate(books):
+                #print(book)
+                #print(f"LOG book {nb} = {book['title']}, {book['author']}, {t}")
+                #print(book["amazon_product_url"])
+                
+                id_book = recovery_id_book(book)
+                #print(f"id_book {id_book}")
+                insert_sql_rank(config, book, id_book, t, monday)
 
-        
-        
-        
+        print(f"LOG Fin maj {monday}")
+    print(f"LOG FIN MAJ")    
 
-
-
-
-
-    
-
+maj_data()    
