@@ -1,16 +1,23 @@
 import mysql.connector
 import pandas as pd
-from datetime import datetime
 import pandas as pd
 from pynytimes import NYTAPI
 from datetime import datetime, timedelta, date
+import sys
+
+#modification de la variable host entre dev et docker
+if len(sys.argv) > 1:
+    host = sys.argv[1]
+else :
+    host = "0.0.0.0"
 
 # Paramètres de connexion à la base de données
 config = {
     "user": "root",            # L'utilisateur par défaut de MySQL
     "password": "123456", # Le mot de passe que vous avez défini lors du démarrage du conteneur
-    "host": "0.0.0.0",        # L'adresse IP du conteneur MySQL (localhost)
+    #"host": "0.0.0.0",        # L'adresse IP du conteneur MySQL (localhost)
     #"host":"nyt_mysql",
+    "host":host,
     "database": "nyt",   # Nom de la base de données que vous avez créée
     "port": 3306               # Port par défaut de MySQL
 }
@@ -238,4 +245,7 @@ def maj_data():
         print(f"LOG Fin maj {monday}")
     print(f"LOG FIN MAJ")    
 
-maj_data()    
+maj_data()
+
+
+        
