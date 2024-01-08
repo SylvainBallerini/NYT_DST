@@ -31,6 +31,16 @@ config = {
 def app():
     st.title("Apprentissage automatique supervisé")
 
+    df_ml = select_sql(config, "SELECT date, name_model, mse_score, mae_score, r_squared_score FROM machine_learning")
+    st.dataframe(df_ml)
+
+    df = select_data_rank_book(config)
+    st.dataframe(df.head())
+
+    
+
+    
+
 def load_model(config, type_model):
     connection = mysql.connector.connect(**config)    
     # Créer un curseur
@@ -111,17 +121,20 @@ def clean_dataframe_VE(df, column_name):
     
     return cleaned_df
 
-df_book = select_sql(config, "select * from data_book")
+def select_data_rank_book(config):
 
-df_rank = select_sql(config, "select * from data_rank")
+    df_book = select_sql(config, "select * from data_book")
 
-df_rank_max = df_rank[['id_book','weeks_on_list','type_book']]
-df_rank_max = df_rank_max.groupby(['id_book','type_book'])['weeks_on_list'].max().reset_index()
+    df_rank = select_sql(config, "select * from data_rank")
 
-df = df_rank_max.merge(df_book, left_on="id_book", right_on="id_book")
+    df_rank_max = df_rank[['id_book','weeks_on_list','type_book']]
+    df_rank_max = df_rank_max.groupby(['id_book','type_book'])['weeks_on_list'].max().reset_index()
 
-print(df.head())
+    df = df_rank_max.merge(df_book, left_on="id_book", right_on="id_book")
 
+    return df
+
+"""
 df['weeks_on_list'] = df['weeks_on_list'].astype(int)
 
 df_ml = df[['author','publisher','weeks_on_list','type_book']]
@@ -138,22 +151,12 @@ y = df_ml[['weeks_on_list']]
 X = df_ml.drop('weeks_on_list', axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 
-"""
-print("Scaler")
-
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-
-print("Modele")
-model = DecisionTreeRegressor()
-model.fit(X_train, y_train)
-"""
-
 y_pred = model.predict(X_test)
 
 mse = mean_squared_error(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
+"""
+
+
 
 

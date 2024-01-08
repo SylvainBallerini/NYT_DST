@@ -175,7 +175,9 @@ def save_modele(config, model, info_model):
     connection.commit()
     connection.close() 
 
+#entrainement des modeles de modèle de régression linéaire
 
+#chaque modele est mis dans un dico qui comporte son nom et son modele pour le suivi jusqu'à la BDD
 def train_all_model():
 
     models = []
@@ -185,6 +187,7 @@ def train_all_model():
     dico_model['model'] =  DecisionTreeRegressor()
     models.append(dico_model)
 
+    #suppresion du modele Regression Linear qui ne peut pas suivre avec autant de variable
     """
     dico_model = {}
     dico_model['name'] = 'LinearRegression'
@@ -200,9 +203,7 @@ def train_all_model():
     dico_model = {}
     dico_model['name'] = 'Ridge'
     dico_model['model'] =  Ridge(alpha=0.01)
-    models.append(dico_model)
-    
-    
+    models.append(dico_model) 
     
 
     for m in models:
