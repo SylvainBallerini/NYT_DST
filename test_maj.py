@@ -17,4 +17,8 @@ def test_total():
 
     """La somme d'une liste vide doit être 0"""
     assert total([]) == 0
+
+
+
+
     
