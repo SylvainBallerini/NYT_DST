@@ -1,7 +1,9 @@
-from maj import total, select_sql
+from maj import total, select_sql, get_mondays
 import pytest
 import pandas as pd
 from datetime import datetime
+from unittest.mock import patch
+
 
 config = {
     "user": "root",            # L'utilisateur par défaut de MySQL
@@ -32,40 +34,29 @@ def test_total():
 
 def test_select_sql():
 
-       
+
     query = "SELECT count(*) FROM data_rank"
-        
+
     df = select_sql(config, query)
-            
-            # Assurez-vous que le résultat est un DataFrame
+
+    # Assurez-vous que le résultat est un DataFrame
     assert isinstance(df, pd.DataFrame)
-            
-            # Assurez-vous que le DataFrame n'est pas vide (ajustez selon vos attentes)
+
+    # Assurez-vous que le DataFrame n'est pas vide (ajustez selon vos attentes)
     assert not df.empty
 
     query = "SELECT count(*) FROM data_book"
-            
+
     df = select_sql(config, query)
-                
+
                 # Assurez-vous que le résultat est un DataFrame
     assert isinstance(df, pd.DataFrame)
-                
+
                 # Assurez-vous que le DataFrame n'est pas vide (ajustez selon vos attentes)
     assert not df.empty
 
     query = "SELECT MAX(date) FROM data_rank"
-            
+
     df = select_sql(config, query)
 
     assert len(df) == 1
-    
-
-    
-
-        
-            
-       
-
-
-
-    

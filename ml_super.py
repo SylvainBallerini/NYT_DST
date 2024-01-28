@@ -29,20 +29,147 @@ config = {
 }
 
 def app():
+
+    print("app 00")
+    df = select_data_rank_book(config)
+    df_ml = prepare_df_ml(df)
+    print(f"df_ml {df_ml.shape}")
+
     st.title("Apprentissage automatique supervisé")
 
-    df_ml = select_sql(config, "SELECT date, name_model, mse_score, mae_score, r_squared_score FROM machine_learning")
-    st.dataframe(df_ml)
+    df_bdd_ml = select_sql(config, "SELECT date, name_model, mse_score, mae_score, r_squared_score FROM machine_learning")
+    st.dataframe(df_bdd_ml)
 
-    df = select_data_rank_book(config)
-    st.dataframe(df.head())
+    df['type_book'] = df['type_book'].apply(lambda x: x.lower())
 
-    
+    #st.dataframe(df.head())
 
-    
+    st.text("Sélectionnez les features pour prédire combien de semaine un livre au maximum va rester dans les bests sellers")
+
+    S_author = set(df['author'].unique())
+    author = st.selectbox("Quel auteur ?", S_author)
+
+    st.write("Vous avez sélectionné : ", author)
+
+    S_publisher = set(df['publisher'].unique())
+    publisher = st.selectbox("Quel éditeur ?", S_publisher)
+
+    st.write("Vous avez sélectionné : ", publisher)
+
+
+    S_type_book = set(df['type_book'].unique())
+    type_book = st.selectbox("Quel type de livre ?", S_type_book)
+
+    st.write("Vous avez sélectionné : ", type_book)
+
+    print("app 01")
+
+    df_predict = create_df_for_predict(author, publisher, type_book)
+
+    print(df_predict.head(1))
+    df_predict = pd.get_dummies(df_predict, columns=['author','publisher','type_book'])
+
+    print(df_predict.shape)
+
+    print("app 02")
+
+    #df = select_data_rank_book(config)
+
+    """
+    df['weeks_on_list'] = df['weeks_on_list'].astype(int)
+    df_ml = df[['author','publisher','weeks_on_list','type_book']]
+    #print(df_ml.describe())
+    df_ml = clean_dataframe_VE(df_ml, 'weeks_on_list')
+    df_ml['type_book'] = df_ml['type_book'].apply(lambda x: x.lower())
+    #print(df_ml.describe())
+
+    """
+    #df_ml = pd.get_dummies(df_ml, columns=['author','publisher','type_book'])
+    X = df_ml.drop('weeks_on_list', axis=1)
+    print(X.shape)
+
+    print("app 03")
+
+    #X = df_ml.drop('weeks_on_list', axis=1)
+    #print(f"X = {X.shape}")
+
+    # Avant l'ajout de colonnes manquantes
+    print("Colonnes avant l'ajout de colonnes manquantes dans df_predict:", df_predict.columns)
+
+
+    missing_cols = set(X.columns) - set(df_predict.columns)
+    df_predict = pd.concat([df_predict, pd.DataFrame(0, index=df_predict.index, columns=list(missing_cols))], axis=1)
+    df_predict = df_predict[X.columns]
+    # récupération des colonnes manquantes
+
+    # Après l'ajout de colonnes manquantes
+    print("Colonnes après l'ajout de colonnes manquantes dans df_predict:", df_predict.columns)
+
+    print("app 04")
+
+    """
+
+
+    # Concaténation du DataFrame avec les nouvelels colonnes à 0
+    df_predict = pd.concat([df_predict, missing_cols_df], axis=1)
+    """
+    """
+    for col in missing_cols:
+        df_predict[col] = 0
+    """
+
+    """
+    missing_cols = set(X.columns) - set(df_predict.columns)
+    print("missing_cols")
+    print(missing_cols)
+
+    print(f"df_predict = {df_predict.shape}")
+
+    predict_DTR = model.predict(df_predict)
+    print(predict_DTR)
+    """
+
+    #st.write("Prédiction avec DecisionTreeRegressor", predict_DTR)
+    print("app 05")
+
+    model_DTR = load_model(config, 'DecisionTreeRegressor')
+    print(model_DTR.predict(df_predict))
+    predict_DTR = model_DTR.predict(df_predict)
+    st.write("Prédiction avec DecisionTreeRegressor", predict_DTR)
+
+    model_Ridge = load_model(config, 'Ridge')
+    predict_ridge = model_Ridge.predict(df_predict)
+    st.write("Prédiction avec Ridge", predict_ridge)
+
+    model_Lasso = load_model(config, 'Lasso')
+    predict_lasso = model_Lasso.predict(df_predict)
+    st.write("Prédiction avec Lasso", predict_lasso)
+
+    """
+    print(model_DTR)
+    print(model_Ridge)
+    print(model_Lasso)
+
+    print("Prédiction avec DecisionTreeRegressor :", predict_DTR)
+    print("Prédiction avec Ridge :", predict_ridge)
+    print("Prédiction avec Lasso :", predict_lasso)
+
+    # Pour DecisionTreeRegressor
+    if hasattr(model_DTR, 'feature_importances_'):
+        print("Importance des caractéristiques (DecisionTreeRegressor):", model_DTR.feature_importances_)
+
+    # Pour Ridge
+    if hasattr(model_Ridge, 'coef_'):
+        print("Coefficients (Ridge):", model_Ridge.coef_)
+
+    # Pour Lasso
+    if hasattr(model_Lasso, 'coef_'):
+        print("Coefficients (Lasso):", model_Lasso.coef_)
+
+    """
 
 def load_model(config, type_model):
-    connection = mysql.connector.connect(**config)    
+    connection = mysql.connector.connect(**config)
     # Créer un curseur
     cursor = connection.cursor()
 
@@ -50,7 +177,7 @@ def load_model(config, type_model):
 
     query = "SELECT blob_model FROM machine_learning WHERE date = (select max(date) from machine_learning) and name_model like {}".format(type_model)
 
-    print(query)
+    #print(query)
 
     # Récupérer le modèle depuis la base de données MySQL
     cursor.execute(query)
@@ -69,94 +196,99 @@ def load_model(config, type_model):
 
     return model
 
-model = load_model(config, 'DecisionTreeRegressor')
-
 # Exécute un select sur la BDD et retourne un dataFrame
 def select_sql(config, query):
     #param = config
     # Établir une connexion
-    connection = mysql.connector.connect(**config)    
+    connection = mysql.connector.connect(**config)
     # Créer un curseur
-    cursor = connection.cursor()    
+    cursor = connection.cursor()
     # Exécuter une requête SELECT
     #query = "SELECT MAX(date) FROM data_rank"  # Remplacez "mytable" par le nom de votre table
-    cursor.execute(query)    
+    cursor.execute(query)
     # Récupérer les résultats
-    results = cursor.fetchall()    
+    results = cursor.fetchall()
     # Afficher les résultats
     """
     for row in results:
        print(row)
     """
-    
-    df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])    
+
+    df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])
     # Affichage du DataFrame
-    #print(df)    
+    #print(df)
     # Fermer le curseur et la connexion
     cursor.close()
     connection.close()
 
     return df
 
-def clean_dataframe_VE(df, column_name):
-    # Calcul des quartiles
-    Q1 = df[column_name].quantile(0.25)
-    Q3 = df[column_name].quantile(0.75)
-
-    print(f"Q1 = {Q1}")
-    print(f"Q3 = {Q3}")
-    
-    # Calcul de l'écart interquartile
-    IQR = Q3 - Q1
-    
-    # Détermination des limites pour les valeurs extrêmes
-    lower_limit = Q1 - 1.5 * IQR
-    upper_limit = Q3 + 1.5 * IQR
-
-    print(f"lower_limit = {lower_limit}")
-    print(f"upper_limit = {upper_limit}")
-    
-    # Filtrage du DataFrame pour exclure les valeurs extrêmes
-    cleaned_df = df[(df[column_name] >= lower_limit) & (df[column_name] <= upper_limit)]
-    
-    return cleaned_df
-
+# Récupération des tables livres et rangs dont on fait une jointure et qu'on return en dataframe
 def select_data_rank_book(config):
 
+    print("Dans select_data_rank_book")
+
     df_book = select_sql(config, "select * from data_book")
+    df_book = df_book[['author','publisher',"id_book"]]
 
     df_rank = select_sql(config, "select * from data_rank")
+    df_rank = df_rank[["type_book","id_book","weeks_on_list"]]
+    df_rank['weeks_on_list'] = df_rank['weeks_on_list'].astype(int)
 
     df_rank_max = df_rank[['id_book','weeks_on_list','type_book']]
-    df_rank_max = df_rank_max.groupby(['id_book','type_book'])['weeks_on_list'].max().reset_index()
+    #df_rank_max = df_rank_max.groupby(['id_book','type_book'])['weeks_on_list'].max().reset_index()
+    df_rank_max = df_rank_max.groupby(['id_book','type_book']).max().reset_index()
+
+    print(f" select_data_rank_book : df_rank_max {df_rank_max.head()}")
 
     df = df_rank_max.merge(df_book, left_on="id_book", right_on="id_book")
 
+    print(f" select_data_rank_book : df {df.head()}")
+
     return df
 
-"""
-df['weeks_on_list'] = df['weeks_on_list'].astype(int)
+def create_df_for_predict(author, publisher, type_book):
+    print(author)
+    print(publisher)
+    print(type_book)
+    return pd.DataFrame({"author":[author], "publisher":[publisher], "type_book":[type_book]})
 
-df_ml = df[['author','publisher','weeks_on_list','type_book']]
+def prepare_df_ml(df):
 
-print(df_ml.describe())
+    print("Dans prepare_df_ml")
+    print(df.head())
 
-df_ml = clean_dataframe_VE(df_ml, 'weeks_on_list')
+    df['weeks_on_list'] = df['weeks_on_list'].astype(int)
 
-print(df_ml.describe())
+    df['type_book'] = df['type_book'].apply(lambda x: x.lower())
 
-df_ml = pd.get_dummies(df_ml, columns=['author','publisher','type_book'])
+    df_ml = df[['author','publisher','weeks_on_list','type_book']]
 
-y = df_ml[['weeks_on_list']]
-X = df_ml.drop('weeks_on_list', axis=1)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+    #print(df_ml.describe())
 
-y_pred = model.predict(X_test)
+    df_ml = replace_outlier(df_ml, 'weeks_on_list')
 
-mse = mean_squared_error(y_test, y_pred)
-print(f'Mean Squared Error: {mse}')
-"""
+    #print(df_ml.describe())
 
+    df_ml = pd.get_dummies(df_ml, columns=['author','publisher','type_book'])
 
+    return df_ml
 
 
+# pour les remplacer par les limites basse ou haute
+def replace_outlier(data, col):
+    Q1 = data[col].quantile(0.25)
+    Q3 = data[col].quantile(0.75)
+    IQ = Q3 - Q1
+
+  #print(f"IQ = {IQ}")
+
+    upper_limit = Q3 + 1.5*IQ
+    lower_limit = Q1 - 1.5*IQ
+
+  #print(f"limite haute = {upper_limit}, limite basse = {lower_limit}")
+
+    data.loc[data[col] > upper_limit, col] = upper_limit
+    data.loc[data[col] < lower_limit, col] = lower_limit
+
+    return data
