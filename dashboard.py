@@ -12,12 +12,12 @@ if len(sys.argv) > 1:
     host = sys.argv[1]
 else :
     host = "0.0.0.0"
-    
+
 # Paramètres de connexion à la base de données
 config = {
     "user": "root",            # L'utilisateur par défaut de MySQL
     "password": "123456", # Le mot de passe que vous avez défini lors du démarrage du conteneur
-    "host": host,        # L'adresse IP du conteneur MySQL (localhost)
+    "host": "nyt_mysql",        # L'adresse IP du conteneur MySQL (localhost)
     #"host":"nyt_mysql",
     "database": "nyt",   # Nom de la base de données que vous avez créée
     "port": 3306               # Port par défaut de MySQL
@@ -36,21 +36,21 @@ type_book = [
 def select_sql(config, query):
     param = config
     # Établir une connexion
-    connection = mysql.connector.connect(**config)    
+    connection = mysql.connector.connect(**config)
     # Créer un curseur
-    cursor = connection.cursor()    
+    cursor = connection.cursor()
     # Exécuter une requête SELECT
     #query = "SELECT MAX(date) FROM data_rank"  # Remplacez "mytable" par le nom de votre table
-    cursor.execute(query)    
+    cursor.execute(query)
     # Récupérer les résultats
-    results = cursor.fetchall()    
+    results = cursor.fetchall()
     # Afficher les résultats
     for row in results:
        print(row)
-    
-    df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])    
+
+    df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])
     # Affichage du DataFrame
-    #print(df)    
+    #print(df)
     # Fermer le curseur et la connexion
     cursor.close()
     connection.close()
@@ -70,7 +70,7 @@ def select_data_rank_book(config):
 
     df['weeks_on_list'] = df['weeks_on_list'].astype(float)
     df['book_image_width'] = df['book_image_width'].astype(float)
-    df['book_image_height'] = df['book_image_height'].astype(float)    
+    df['book_image_height'] = df['book_image_height'].astype(float)
 
     return df
 
@@ -86,7 +86,3 @@ def app():
     st.dataframe(df_br[['weeks_on_list', "book_image_width", "book_image_height"]].describe())
 
     print(df_br.info())
-    
-    
-
-    

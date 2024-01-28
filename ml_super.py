@@ -23,7 +23,7 @@ config = {
     "password": "123456", # Le mot de passe que vous avez défini lors du démarrage du conteneur
     #"host": "0.0.0.0",        # L'adresse IP du conteneur MySQL (localhost)
     #"host":"nyt_mysql",
-    "host":host,
+    "host":"nyt_mysql",
     "database": "nyt",   # Nom de la base de données que vous avez créée
     "port": 3306               # Port par défaut de MySQL
 }
@@ -62,75 +62,17 @@ def app():
 
     st.write("Vous avez sélectionné : ", type_book)
 
-    print("app 01")
-
     df_predict = create_df_for_predict(author, publisher, type_book)
 
-    print(df_predict.head(1))
+
     df_predict = pd.get_dummies(df_predict, columns=['author','publisher','type_book'])
 
-    print(df_predict.shape)
-
-    print("app 02")
-
-    #df = select_data_rank_book(config)
-
-    """
-    df['weeks_on_list'] = df['weeks_on_list'].astype(int)
-    df_ml = df[['author','publisher','weeks_on_list','type_book']]
-    #print(df_ml.describe())
-    df_ml = clean_dataframe_VE(df_ml, 'weeks_on_list')
-    df_ml['type_book'] = df_ml['type_book'].apply(lambda x: x.lower())
-    #print(df_ml.describe())
-
-    """
-    #df_ml = pd.get_dummies(df_ml, columns=['author','publisher','type_book'])
     X = df_ml.drop('weeks_on_list', axis=1)
-    print(X.shape)
-
-    print("app 03")
-
-    #X = df_ml.drop('weeks_on_list', axis=1)
-    #print(f"X = {X.shape}")
-
-    # Avant l'ajout de colonnes manquantes
-    print("Colonnes avant l'ajout de colonnes manquantes dans df_predict:", df_predict.columns)
-
 
     missing_cols = set(X.columns) - set(df_predict.columns)
     df_predict = pd.concat([df_predict, pd.DataFrame(0, index=df_predict.index, columns=list(missing_cols))], axis=1)
     df_predict = df_predict[X.columns]
-    # récupération des colonnes manquantes
 
-    # Après l'ajout de colonnes manquantes
-    print("Colonnes après l'ajout de colonnes manquantes dans df_predict:", df_predict.columns)
-
-    print("app 04")
-
-    """
-
-
-    # Concaténation du DataFrame avec les nouvelels colonnes à 0
-    df_predict = pd.concat([df_predict, missing_cols_df], axis=1)
-    """
-    """
-    for col in missing_cols:
-        df_predict[col] = 0
-    """
-
-    """
-    missing_cols = set(X.columns) - set(df_predict.columns)
-    print("missing_cols")
-    print(missing_cols)
-
-    print(f"df_predict = {df_predict.shape}")
-
-    predict_DTR = model.predict(df_predict)
-    print(predict_DTR)
-    """
-
-    #st.write("Prédiction avec DecisionTreeRegressor", predict_DTR)
-    print("app 05")
 
     model_DTR = load_model(config, 'DecisionTreeRegressor')
     print(model_DTR.predict(df_predict))
@@ -145,28 +87,6 @@ def app():
     predict_lasso = model_Lasso.predict(df_predict)
     st.write("Prédiction avec Lasso", predict_lasso)
 
-    """
-    print(model_DTR)
-    print(model_Ridge)
-    print(model_Lasso)
-
-    print("Prédiction avec DecisionTreeRegressor :", predict_DTR)
-    print("Prédiction avec Ridge :", predict_ridge)
-    print("Prédiction avec Lasso :", predict_lasso)
-
-    # Pour DecisionTreeRegressor
-    if hasattr(model_DTR, 'feature_importances_'):
-        print("Importance des caractéristiques (DecisionTreeRegressor):", model_DTR.feature_importances_)
-
-    # Pour Ridge
-    if hasattr(model_Ridge, 'coef_'):
-        print("Coefficients (Ridge):", model_Ridge.coef_)
-
-    # Pour Lasso
-    if hasattr(model_Lasso, 'coef_'):
-        print("Coefficients (Lasso):", model_Lasso.coef_)
-
-    """
 
 def load_model(config, type_model):
     connection = mysql.connector.connect(**config)

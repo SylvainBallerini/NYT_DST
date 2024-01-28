@@ -52,31 +52,6 @@ def select_sql(config, query):
 
     return df
 
-"""
-def clean_dataframe_VE(df, column_name):
-    # Calcul des quartiles
-    Q1 = df[column_name].quantile(0.25)
-    Q3 = df[column_name].quantile(0.75)
-
-    #print(f"Q1 = {Q1}")
-    #print(f"Q3 = {Q3}")
-
-    # Calcul de l'écart interquartile
-    IQR = Q3 - Q1
-
-    # Détermination des limites pour les valeurs extrêmes
-    lower_limit = Q1 - 1.5 * IQR
-    upper_limit = Q3 + 1.5 * IQR
-
-    #print(f"lower_limit = {lower_limit}")
-    #print(f"upper_limit = {upper_limit}")
-
-    # Filtrage du DataFrame pour exclure les valeurs extrêmes
-    cleaned_df = df[(df[column_name] >= lower_limit) & (df[column_name] <= upper_limit)]
-
-    return cleaned_df
-"""
-
 # pour  remplacer les outliers par les limites basse ou haute
 def replace_outlier(data, col):
     Q1 = data[col].quantile(0.25)
@@ -144,12 +119,11 @@ def train_model(df_ml,type_model, model):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 
-    #print("Scaler")
-    """
+
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    """
+    
 
     #print("Modele")
     #model = DecisionTreeRegressor()

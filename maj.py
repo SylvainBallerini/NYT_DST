@@ -32,7 +32,7 @@ type_book = [
     "Business Books"
 ]
 
-#nyt = Api_nyt()
+
 
 def total(nbs):
     return sum(nbs)
@@ -50,12 +50,13 @@ def select_sql(config, query):
     # Récupérer les résultats
     results = cursor.fetchall()
     # Afficher les résultats
+    """
     for row in results:
        print(row)
+    """
 
     df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])
-    # Affichage du DataFrame
-    #print(df)
+
     # Fermer le curseur et la connexion
     cursor.close()
     connection.close()
@@ -68,10 +69,6 @@ def insert_sql_book(config, book):
     param = config
     connection = mysql.connector.connect(**config)
     cursor = connection.cursor()
-
-    #query = "INSERT INTO data_book_2 (amazon_product_url) VALUES ('{}')".format(url)
-    #print(query)
-    #cursor.execute(query)
 
     query = "INSERT INTO data_book (title, author, book_uri, publisher, description, price, contributor, book_image, book_image_width, book_image_height, amazon_product_url) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     cursor.execute(query,[
@@ -115,11 +112,6 @@ def insert_sql_rank(config, book, id_book, type_book, date):
     connection.close()
     print("INSERT RANK DONE")
 
-#df_max = select_sql(config, "SELECT MAX(date) FROM data_rank")
-
-#print(df_max)
-#print(df_max['MAX(date)'].iloc[0])
-
 # Initialise l'API du new york time
 def Api_nyt():
     my_key = 'w07stZlATDr68hfQOml0zUnNcWJFxinm'
@@ -133,18 +125,6 @@ def last_maj():
     return df_max['MAX(date)'].iloc[0]
 
 
-#print(f"last_maj {last_maj()}")
-
-#nyt = Api_nyt()
-"""
-books = nyt.best_sellers_list(
-            name = type_book[0],
-            #date = datetime.strptime(allM[0],'%Y-%m-%d')
-            date = datetime.strptime('2023-11-06', '%Y-%m-%d')
-            #date = '2023-11-06'
-            )
-"""
-
 # Récupération des best seller en fonction du jour et du type
 def get_best_seller(monday, type_b):
     nyt = Api_nyt()
@@ -157,11 +137,6 @@ def get_best_seller(monday, type_b):
 
     return books
 
-
-#print(books[0])
-
-#url = "https://www.amazon.com/dp/1984818589?tag=NYTBSREV-20"
-#url = "http://www.amazon.com/Safe-Haven-Nicholas-Sparks/dp/044654759X?tag=NYTBSREV-20"
 
 # Création de la requête pour vérifier si un livre existe via son URL AMAZON
 def book_in_data(url):
