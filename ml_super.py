@@ -11,21 +11,23 @@ from joblib import dump, load
 from datetime import date
 import sys
 
+# ce fichier fait partie de Streamlit il permet de faire des Prédiction en fonction
+# des dernières modèles ainsi qu'en choissant des Paramètres telle que l'auteur, le type et l'éditeur
+
 #modification de la variable host entre dev et docker
+
 if len(sys.argv) > 1:
-    host = sys.argv[1]
-else :
     host = "0.0.0.0"
+else :
+    host = "nyt_mysql"
 
 # Paramètres de connexion à la base de données
 config = {
-    "user": "root",            # L'utilisateur par défaut de MySQL
-    "password": "123456", # Le mot de passe que vous avez défini lors du démarrage du conteneur
-    #"host": "0.0.0.0",        # L'adresse IP du conteneur MySQL (localhost)
-    #"host":"nyt_mysql",
-    "host":"nyt_mysql",
-    "database": "nyt",   # Nom de la base de données que vous avez créée
-    "port": 3306               # Port par défaut de MySQL
+    "user": "root",
+    "password": "123456",
+    "host" : host,
+    "database": "nyt",
+    "port": 3306
 }
 
 def app():
@@ -41,8 +43,6 @@ def app():
     st.dataframe(df_bdd_ml)
 
     df['type_book'] = df['type_book'].apply(lambda x: x.lower())
-
-    #st.dataframe(df.head())
 
     st.text("Sélectionnez les features pour prédire combien de semaine un livre au maximum va rester dans les bests sellers")
 
@@ -112,7 +112,7 @@ def load_model(config, type_model):
     # Charger le modèle
     model = load(loaded_model_filename)
 
-    print(model)
+    #print(model)
 
     return model
 
@@ -124,19 +124,13 @@ def select_sql(config, query):
     # Créer un curseur
     cursor = connection.cursor()
     # Exécuter une requête SELECT
-    #query = "SELECT MAX(date) FROM data_rank"  # Remplacez "mytable" par le nom de votre table
+
     cursor.execute(query)
     # Récupérer les résultats
     results = cursor.fetchall()
-    # Afficher les résultats
-    """
-    for row in results:
-       print(row)
-    """
 
     df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])
-    # Affichage du DataFrame
-    #print(df)
+
     # Fermer le curseur et la connexion
     cursor.close()
     connection.close()
@@ -156,7 +150,6 @@ def select_data_rank_book(config):
     df_rank['weeks_on_list'] = df_rank['weeks_on_list'].astype(int)
 
     df_rank_max = df_rank[['id_book','weeks_on_list','type_book']]
-    #df_rank_max = df_rank_max.groupby(['id_book','type_book'])['weeks_on_list'].max().reset_index()
     df_rank_max = df_rank_max.groupby(['id_book','type_book']).max().reset_index()
 
     print(f" select_data_rank_book : df_rank_max {df_rank_max.head()}")
@@ -176,7 +169,7 @@ def create_df_for_predict(author, publisher, type_book):
 def prepare_df_ml(df):
 
     print("Dans prepare_df_ml")
-    print(df.head())
+    #print(df.head())
 
     df['weeks_on_list'] = df['weeks_on_list'].astype(int)
 

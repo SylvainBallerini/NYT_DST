@@ -11,41 +11,40 @@ from joblib import dump, load
 from datetime import date
 import sys
 
+# fichier pour Entrainer 3 modèles de ML supervisé avec l'ensemble des données
+# on garde les modèles dans la BDD sous forme de BLOB avec les 3 scores et la date
+
+
+#modification de la variable host entre dev et docker
+
 if len(sys.argv) > 1:
     host = sys.argv[1]
 else :
     host = "0.0.0.0"
 
 config = {
-    "user": "root",            # L'utilisateur par défaut de MySQL
-    "password": "123456", # Le mot de passe que vous avez défini lors du démarrage du conteneur
-    "host": host,        # L'adresse IP du conteneur MySQL (localhost)
-    #"host":"nyt_mysql",
-    "database": "nyt",   # Nom de la base de données que vous avez créée
-    "port": 3306               # Port par défaut de MySQL
+    "user": "root",
+    "password": "123456",
+    "host": host,
+    "database": "nyt",
+    "port": 3306
 }
 
 # Exécute un select sur la BDD et retourne un dataFrame
 def select_sql(config, query):
-    #param = config
+
     # Établir une connexion
     connection = mysql.connector.connect(**config)
     # Créer un curseur
     cursor = connection.cursor()
     # Exécuter une requête SELECT
-    #query = "SELECT MAX(date) FROM data_rank"  # Remplacez "mytable" par le nom de votre table
     cursor.execute(query)
     # Récupérer les résultats
     results = cursor.fetchall()
     # Afficher les résultats
-    """
-    for row in results:
-       print(row)
-    """
 
     df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])
-    # Affichage du DataFrame
-    #print(df)
+
     # Fermer le curseur et la connexion
     cursor.close()
     connection.close()
@@ -83,9 +82,8 @@ def select_data_rank_book(config):
 
     return df
 
+# preparation du df avant l'entrainement
 def prepare_df_ml(df):
-
-    #print(df.head())
 
     df['weeks_on_list'] = df['weeks_on_list'].astype(int)
 
@@ -93,18 +91,13 @@ def prepare_df_ml(df):
 
     df_ml = df[['author','publisher','weeks_on_list','type_book']]
 
-    #print(df_ml.describe())
-
-    #df_ml = clean_dataframe_VE(df_ml, 'weeks_on_list')
     df_ml = replace_outlier(df_ml, 'weeks_on_list')
-
-    #print(df_ml.describe())
 
     df_ml = pd.get_dummies(df_ml, columns=['author','publisher','type_book'])
 
     return df_ml
 
-
+# fonction pour entrainer les modèles et les sauvegarder dans la BDD avec nom, les 3 scores et le modèle
 def train_model(df_ml,type_model, model):
 
     print("train model")
@@ -123,10 +116,8 @@ def train_model(df_ml,type_model, model):
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    
 
-    #print("Modele")
-    #model = DecisionTreeRegressor()
+
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
@@ -175,8 +166,6 @@ def save_modele(config, model, info_model):
     connection.commit()
     connection.close()
 
-#entrainement des modeles de modèle de régression linéaire
-
 #chaque modele est mis dans un dico qui comporte son nom et son modele pour le suivi jusqu'à la BDD
 def train_all_model():
 
@@ -213,4 +202,10 @@ def train_all_model():
         df_ml = prepare_df_ml(df)
         train_model(df_ml,m['name'], m['model'])
 
-train_all_model()
+#train_all_model()
+
+def main():
+    train_all_model()
+
+if __name__ == "__main__":
+    main()

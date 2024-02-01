@@ -5,7 +5,8 @@ COPY requirementsTrainML.txt /app/
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install -r requirementsTrainML.txt && \
-    pip install streamlit    
+    pip install streamlit && \
+    pip install plotly
 COPY app.py /app/
 COPY ml_super.py /app/
 COPY presentation.py /app/

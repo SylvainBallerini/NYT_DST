@@ -5,6 +5,11 @@ from pynytimes import NYTAPI
 from datetime import datetime, timedelta, date
 import sys
 
+# fichier pour faire la MAJ de la BDD des tables data_book et data_rank
+# se lance tous les dimanches à 12h via un cronjob
+# Elle ajoute un livre si un nouveau livre devient bestsellers de la semaine dans data_book
+# MAJ de la table data_rank avec les nouvelles informations (avec INSERT)
+
 #modification de la variable host entre dev et docker
 if len(sys.argv) > 1:
     host = sys.argv[1]
@@ -13,15 +18,14 @@ else :
 
 # Paramètres de connexion à la base de données
 config = {
-    "user": "root",            # L'utilisateur par défaut de MySQL
-    "password": "123456", # Le mot de passe que vous avez défini lors du démarrage du conteneur
-    #"host": "0.0.0.0",        # L'adresse IP du conteneur MySQL (localhost)
-    #"host":"nyt_mysql",
+    "user": "root",
+    "password": "123456",
     "host":host,
-    "database": "nyt",   # Nom de la base de données que vous avez créée
-    "port": 3306               # Port par défaut de MySQL
+    "database": "nyt",
+    "port": 3306
 }
 
+# les types de livres
 type_book = [
     "Combined Print and E-Book Fiction",
     "Combined Print and E-Book Nonfiction",
@@ -33,28 +37,27 @@ type_book = [
 ]
 
 
-
+# test simple pour tester pytest
 def total(nbs):
     return sum(nbs)
 
 # Exécute un select sur la BDD et retourne un dataFrame
 def select_sql(config, query):
     param = config
+
     # Établir une connexion
     connection = mysql.connector.connect(**config)
+
     # Créer un curseur
     cursor = connection.cursor()
+
     # Exécuter une requête SELECT
-    #query = "SELECT MAX(date) FROM data_rank"  # Remplacez "mytable" par le nom de votre table
     cursor.execute(query)
+
     # Récupérer les résultats
     results = cursor.fetchall()
-    # Afficher les résultats
-    """
-    for row in results:
-       print(row)
-    """
 
+    # Afficher les résultats
     df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description])
 
     # Fermer le curseur et la connexion
@@ -115,7 +118,6 @@ def insert_sql_rank(config, book, id_book, type_book, date):
 # Initialise l'API du new york time
 def Api_nyt():
     my_key = 'w07stZlATDr68hfQOml0zUnNcWJFxinm'
-    #my_key = 'rb6HJKRHaF7XIRAQ9P9vG21Ka55KiTlx'
     return NYTAPI(my_key, parse_dates=True)
 
 # Retourne la date de la dernière mise à jour
@@ -130,8 +132,6 @@ def get_best_seller(monday, type_b):
     nyt = Api_nyt()
     books = nyt.best_sellers_list(
                 name = type_b,
-                #date = datetime.strptime(allM[0],'%Y-%m-%d')
-                #date = datetime.strptime('2023-11-06', '%Y-%m-%d')
                 date = datetime.strptime(monday, '%Y-%m-%d')
                 )
 
@@ -203,18 +203,15 @@ def maj_data():
         # boucle sur les différents types de livre
         for t in type_book:
             print(f"LOG Début maj type = {t}")
-            #print(get_best_seller(monday, type_book[0])[0])
+
             books = get_best_seller(monday, t)
             print(f"LOG nombre de livre {len(books)}")
 
             # Boucle sur chaque livre
             for nb, book in enumerate(books):
-                #print(book)
-                #print(f"LOG book {nb} = {book['title']}, {book['author']}, {t}")
-                #print(book["amazon_product_url"])
 
                 id_book = recovery_id_book(book)
-                #print(f"id_book {id_book}")
+
                 insert_sql_rank(config, book, id_book, t, monday)
 
         print(f"LOG Fin maj {monday}")
