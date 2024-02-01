@@ -1,0 +1,14 @@
+FROM python:3.8
+WORKDIR /app
+COPY requirements.txt /app/
+COPY requirementsTrainML.txt /app/
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install -r requirementsTrainML.txt && \
+    pip install streamlit && \
+    pip install plotly
+COPY app.py /app/
+COPY ml_super.py /app/
+COPY presentation.py /app/
+COPY dashboard.py /app/
+CMD ["streamlit", "run", "app.py"]
